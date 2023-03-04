@@ -8,13 +8,16 @@
 3. 任务执行完毕后会通过`sugar-server`的`http API`回调，将性能数据通过`sugar-server`存入数据库中
 4. 前端调用`sugar-server`的`http API`获取性能数据并展示
 
-message body
+output usage
 ```text
-{"taskType":0,"metadata":{"durationTime":5,"count":5}}
-# output usage
-2023/03/04 13:22:18 Binding queue log_queue to exchange logs_direct with routing key info
-2023/03/04 13:22:18 [******] Started consumer [******] -> Waiting for messages. To exit press CTRL+C
-2023/03/04 13:22:39 [x] Received a message [x] -> {"taskType":0,"metadata":{"durationTime":1,"count":5}}
-2023/03/04 13:22:49 [x] Task is done [x]
-2023/03/04 13:22:49 [x] Total use time: 10.005037 s [x]
+2023/03/05 13:18:22 Binding queue collect_device_perf_data_queue to exchange device_exchange with routing key device_perf_data
+2023/03/05 13:18:22 [******] Started consumer [******] -> Waiting for messages. To exit press CTRL+C
+2023/03/05 13:18:41 [x] Received a message [x] -> {"task_type": 0, "metadata": {"base_url": "http://127.0.0.1:8000", "task_id": "d5cfcfa5-266e-4faa-8200-3e5ad9fc8a4e", "username": "admin", "password": "admin3306", "task_config": {"intervals": 10, "count": 5}}}
+2023/03/05 13:18:41 [x] Start task [x]
+2023/03/05 13:19:37 [x] Task is done [x]
+2023/03/05 13:19:37 [x] Total use time: 55.012806 s [x]
+2023/03/05 13:31:07 [x] Received a message [x] -> {"task_type": 0, "metadata": {"base_url": "http://127.0.0.1:8000", "task_id": "5b03bc30-bf42-4008-97e0-29387dbbc24c", "username": "admin", "password": "admin3306", "task_config": {"intervals": 5, "count": 5}}}
+2023/03/05 13:31:08 [x] Start task [x]
+2023/03/05 13:31:38 [x] Task is done [x]
+2023/03/05 13:31:38 [x] Total use time: 30.009797 s [x]
 ```

@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -72,44 +73,61 @@ type PerfData struct {
 	Data       []DynamicDataSummary `json:"perfData"`
 }
 
-func getCpuProperties() *CpuInfo {
+// getCpuProperties returns cpu properties
+func getCpuProperties() (*CpuInfo, error) {
 	cpuPhysicalCoresCount, err := cpu.Counts(false)
-	utils.LogOnError(err, "get cpu physical cores count failed")
+	if err != nil {
+		return nil, errors.New("get cpu physical cores count failed")
+	}
 	cpuLogicalCoresCount, err := cpu.Counts(true)
-	utils.LogOnError(err, "get cpu logical cores count failed")
+	if err != nil {
+		return nil, errors.New("get cpu logical cores count failed")
+	}
 	info, err := cpu.Info()
-	utils.LogOnError(err, "get cpu info failed")
+	if err != nil {
+		return nil, errors.New("get cpu info failed")
+	}
 	ModelName := info[0].ModelName
 	cpuInfo := CpuInfo{
 		PhysicalCoresCount: uint16(cpuPhysicalCoresCount),
 		LogicalCoresCount:  uint16(cpuLogicalCoresCount),
 		ModelName:          ModelName,
 	}
-	return &cpuInfo
+	return &cpuInfo, nil
 }
 
+// getCpuPercent returns cpu percent
 func getCpuPercent() float64 {
 	cpuPercent, err := cpu.Percent(time.Second, false)
+	if err != nil {
+		return -1
+	}
 	utils.LogOnError(err, "get cpu percent failed")
 	val := humanizePercent(cpuPercent[0])
 	return val
 }
 
-func getDiskInfo() *DiskInfo {
+// getDiskInfo returns disk info
+func getDiskInfo() (*DiskInfo, error) {
 	diskInfoData, err := disk.Usage("/")
-	utils.LogOnError(err, "get disk info failed")
+	if err != nil {
+		return nil, errors.New("get disk info failed")
+	}
 	diskInfo := DiskInfo{
 		Total:       humanizeGB(float64(diskInfoData.Total)),
 		Free:        humanizeGB(float64(diskInfoData.Free)),
 		Used:        humanizeGB(float64(diskInfoData.Used)),
 		UsedPercent: humanizePercent(diskInfoData.UsedPercent),
 	}
-	return &diskInfo
+	return &diskInfo, nil
 }
 
-func getMemoryInfo() *MemoryInfo {
+// getMemoryInfo returns memory info
+func getMemoryInfo() (*MemoryInfo, error) {
 	memInfoData, err := mem.VirtualMemory()
-	utils.LogOnError(err, "get memory info failed")
+	if err != nil {
+		return nil, errors.New("get memory info failed")
+	}
 	memInfo := MemoryInfo{
 		Total:       humanizeGB(float64(memInfoData.Total)),
 		Available:   humanizeGB(float64(memInfoData.Available)),
@@ -118,23 +136,29 @@ func getMemoryInfo() *MemoryInfo {
 		Free:        humanizeGB(float64(memInfoData.Free)),
 		Cached:      humanizeGB(float64(memInfoData.Cached)),
 	}
-	return &memInfo
+	return &memInfo, nil
 }
 
-func getLoadInfo() *LoadInfo {
+// getLoadInfo returns load info
+func getLoadInfo() (*LoadInfo, error) {
 	loadInfoData, err := load.Avg()
-	utils.LogOnError(err, "get load info failed")
+	if err != nil {
+		return nil, errors.New("get load info failed")
+	}
 	loadInfo := LoadInfo{
 		Load1:  humanizePercent(loadInfoData.Load1),
 		Load5:  humanizePercent(loadInfoData.Load5),
 		Load15: humanizePercent(loadInfoData.Load15),
 	}
-	return &loadInfo
+	return &loadInfo, nil
 }
 
-func getHostInfo() *HostInfo {
+// getHosInfo returns host info
+func getHostInfo() (*HostInfo, error) {
 	hostInfoData, err := host.Info()
-	utils.LogOnError(err, "get host info failed")
+	if err != nil {
+		return nil, errors.New("get host info failed")
+	}
 	hostInfo := HostInfo{
 		Hostname:        hostInfoData.Hostname,
 		Uptime:          humanizeDuration(time.Duration(hostInfoData.Uptime) * time.Second),
@@ -146,7 +170,7 @@ func getHostInfo() *HostInfo {
 		KernelArch:      hostInfoData.KernelArch,
 		HostID:          hostInfoData.HostID,
 	}
-	return &hostInfo
+	return &hostInfo, nil
 }
 
 // humanizeGB converts bytes to GB
@@ -155,7 +179,10 @@ func getHostInfo() *HostInfo {
 func humanizeGB(bytes float64) float64 {
 	val := strconv.FormatFloat(bytes/1024/1024/1024, 'f', 2, 64)
 	valF, err := strconv.ParseFloat(val, 64)
-	utils.LogOnError(err, "parse float failed")
+	if err != nil {
+		return -1
+	}
+	utils.LogOnError(err, "parse float to humanizeGB failed")
 	return valF
 }
 
@@ -167,7 +194,10 @@ func humanizePercent(percent float64) float64 {
 	}
 	val := strconv.FormatFloat(percent, 'f', 2, 64)
 	valF, err := strconv.ParseFloat(val, 64)
-	utils.LogOnError(err, "parse float failed")
+	if err != nil {
+		return -1
+	}
+	utils.LogOnError(err, "parse float to humanizePercent failed")
 	return valF
 }
 
@@ -200,14 +230,33 @@ func humanizeDuration(duration time.Duration) string {
 	return res[:len(res)-1] // remove trailing space
 }
 
-func StartGetPerfDataTask(duration uint64, count uint64) *PerfData {
+// StartGetPerfDataTask starts a task to get performance data
+// intervals: interval time in seconds
+// count: number of data to get
+// return PerfData
+func StartGetPerfDataTask(intervals uint64, count uint64) (*PerfData, error) {
 	var dynamicData []DynamicDataSummary
-	cpuInfo := getCpuProperties()
-	hostInfo := getHostInfo()
+	cpuInfo, err := getCpuProperties()
+	if err != nil {
+		return nil, errors.New("get cpu properties failed")
+	}
+	hostInfo, err := getHostInfo()
+	if err != nil {
+		return nil, errors.New("get host properties failed")
+	}
 	for i := 0; i < int(count); i++ {
-		diskInfo := getDiskInfo()
-		memInfo := getMemoryInfo()
-		loadAvg := getLoadInfo()
+		diskInfo, err := getDiskInfo()
+		if err != nil {
+			return nil, errors.New("get disk info failed")
+		}
+		memInfo, err := getMemoryInfo()
+		if err != nil {
+			return nil, errors.New("get memory info failed")
+		}
+		loadAvg, err := getLoadInfo()
+		if err != nil {
+			return nil, errors.New("get load info failed")
+		}
 		dynamicData = append(dynamicData, DynamicDataSummary{
 			TimeStamp:  time.Now().Format("2006-01-02 15:04:05"),
 			CpuPercent: getCpuPercent(),
@@ -215,7 +264,7 @@ func StartGetPerfDataTask(duration uint64, count uint64) *PerfData {
 			DiskInfo:   *diskInfo,
 			LoadInfo:   *loadAvg,
 		})
-		time.Sleep(time.Second * time.Duration(duration))
+		time.Sleep(time.Second * time.Duration(intervals))
 	}
 	perfData := PerfData{
 		PropertiesSummary{
@@ -224,5 +273,5 @@ func StartGetPerfDataTask(duration uint64, count uint64) *PerfData {
 		},
 		dynamicData[:],
 	}
-	return &perfData
+	return &perfData, nil
 }
