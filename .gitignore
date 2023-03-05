@@ -11,7 +11,7 @@
 *.dll
 *.so
 *.dylib
-sugar-agent
+sugar-agent_*
 perfData.json
 
 # Test binary, built with `go test -c`
