@@ -3,7 +3,6 @@ package task
 import (
 	"encoding/json"
 	"errors"
-	"os"
 
 	"sugar-agent/internal"
 	"sugar-agent/pkg/utils"
@@ -23,10 +22,10 @@ func StartTask(msg []byte) (*internal.PerfData, error) {
 		if err != nil {
 			return nil, errors.New("get perf data task failed")
 		}
-		b, err := json.MarshalIndent(perfData, "", "  ")
-		utils.FailOnError(err, "json marshal failed")
-		err = os.WriteFile("perfData.json", b, 0644)
-		utils.FailOnError(err, "write file failed")
+		//b, err := json.MarshalIndent(perfData, "", "  ")
+		//utils.FailOnError(err, "json marshal failed")
+		//err = os.WriteFile("perfData.json", b, 0644)
+		//utils.FailOnError(err, "write file failed")
 		return perfData, nil
 	} else {
 		//fmt.Println("TaskType != 0", mqMessage.TaskType)

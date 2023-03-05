@@ -2,14 +2,16 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
+	"strings"
 	"time"
+
+	amqp "github.com/rabbitmq/amqp091-go"
 
 	"sugar-agent/pkg/task"
 	"sugar-agent/pkg/utils"
-
-	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 // doWork do the work
@@ -157,6 +159,18 @@ func startConsuming(user string, password string, host string, port string, exch
 }
 
 func main() {
-	startConsuming("guest", "guest", "localhost", "5672", "device_exchange", "collect_device_perf_data_queue", "device_perf_data")
-
+	// Usage: go run main.go guest guest localhost 5672 device_exchange collect_device_perf_data_queue device_perf_data
+	user := flag.String("user", "", "MQ username")
+	password := flag.String("password", "", "MQ user password")
+	host := flag.String("host", "", "MQ server host")
+	port := flag.String("port", "", "MQ server port")
+	exchangeName := flag.String("exchange-name", "", "MQ exchange name")
+	queueName := flag.String("queue-name", "", "MQ queue name")
+	routingKey := flag.String("routing-key", "", "MQ routing key")
+	flag.Parse()
+	if strings.TrimSpace(*user) != "" && strings.TrimSpace(*password) != "" && strings.TrimSpace(*host) != "" && strings.TrimSpace(*port) != "" && strings.TrimSpace(*exchangeName) != "" && strings.TrimSpace(*queueName) != "" && strings.TrimSpace(*routingKey) != "" {
+		startConsuming(*user, *password, *host, *port, *exchangeName, *queueName, *routingKey)
+	} else {
+		utils.ShowTips()
+	}
 }

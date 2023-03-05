@@ -1,6 +1,10 @@
 package utils
 
-import "log"
+import (
+	"fmt"
+	"log"
+	"os"
+)
 
 // FailOnError check error
 // err: error
@@ -20,4 +24,13 @@ func LogOnError(err error, msg string) {
 	if err != nil {
 		log.Printf("Error happened, %s: %s", msg, err)
 	}
+}
+
+// ShowTips show tips
+func ShowTips() {
+	log.Printf("[error] Parse parmas error, Please check your input params!")
+	fmt.Printf("Welcome to use, you can type ./sugar-agent -h to show help message." +
+		"\nUsages: ./sugar-agent -user guest -password guest -host localhost -port 5672 -exchange-name device_exchange " +
+		"-queue-name collect_device_perf_data_queue -routing-key device_perf_data\n")
+	os.Exit(4)
 }
