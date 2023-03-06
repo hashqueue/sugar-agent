@@ -23,11 +23,11 @@ func UserLogin(baseUrl string, reqData map[string]interface{}) (string, error) {
 	return "", errors.New("failed to login")
 }
 
-func UpdateTaskStatus(baseUrl string, reqData map[string]interface{}, taskID string, token string) error {
+func UpdateTaskStatus(baseUrl string, reqData map[string]interface{}, taskUUID string, token string) error {
 	client := &HTTPClient{
 		BaseURL: baseUrl,
 	}
-	resp, err := client.Patch("/api/v1/tasks/"+taskID+"/", map[string]string{
+	resp, err := client.Patch("/api/v1/tasks/"+taskUUID+"/", map[string]string{
 		"Content-Type":  "application/json",
 		"Authorization": `Bearer ` + token,
 	}, reqData)

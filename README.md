@@ -14,11 +14,11 @@
 hashqueue@hashqueue-pc:~/sugar-agent$ ./sugar-agent_amd64 -user guest -password guest -host localhost -port 5672 -exchange-name device_exchange -queue-name collect_device_perf_data_queue -routing-key device_perf_data
 2023/03/05 13:18:22 Binding queue collect_device_perf_data_queue to exchange device_exchange with routing key device_perf_data
 2023/03/05 13:18:22 [******] Started consumer [******] -> Waiting for messages. To exit press CTRL+C
-2023/03/05 13:18:41 [x] Received a message [x] -> {"task_type": 0, "metadata": {"base_url": "http://127.0.0.1:8000", "task_id": "d5cfcfa5-266e-4faa-8200-3e5ad9fc8a4e", "username": "admin", "password": "admin3306", "task_config": {"intervals": 10, "count": 5}}}
+2023/03/05 13:18:41 [x] Received a message [x] -> {"task_type": 0, "metadata": {"base_url": "http://127.0.0.1:8000", "task_uuid": "d5cfcfa5-266e-4faa-8200-3e5ad9fc8a4e", "username": "admin", "password": "admin3306", "task_config": {"intervals": 10, "count": 5}}}
 2023/03/05 13:18:41 [x] Start task [x]
 2023/03/05 13:19:37 [x] Task is done [x]
 2023/03/05 13:19:37 [x] Total use time: 55.012806 s [x]
-2023/03/05 13:31:07 [x] Received a message [x] -> {"task_type": 0, "metadata": {"base_url": "http://127.0.0.1:8000", "task_id": "5b03bc30-bf42-4008-97e0-29387dbbc24c", "username": "admin", "password": "admin3306", "task_config": {"intervals": 5, "count": 5}}}
+2023/03/05 13:31:07 [x] Received a message [x] -> {"task_type": 0, "metadata": {"base_url": "http://127.0.0.1:8000", "task_uuid": "5b03bc30-bf42-4008-97e0-29387dbbc24c", "username": "admin", "password": "admin3306", "task_config": {"intervals": 5, "count": 5}}}
 2023/03/05 13:31:08 [x] Start task [x]
 2023/03/05 13:31:38 [x] Task is done [x]
 2023/03/05 13:31:38 [x] Total use time: 30.009797 s [x]

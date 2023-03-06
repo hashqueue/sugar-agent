@@ -25,7 +25,7 @@ func doWork(messages <-chan amqp.Delivery) {
 		err := json.Unmarshal(d.Body, &msg)
 		utils.FailOnError(err, "Failed to unmarshal message")
 		baseUrl := msg["metadata"].(map[string]interface{})["base_url"].(string)
-		taskId := msg["metadata"].(map[string]interface{})["task_id"].(string)
+		taskUUID := msg["metadata"].(map[string]interface{})["task_uuid"].(string)
 
 		// Login to get token
 		loginData := map[string]interface{}{
@@ -39,7 +39,7 @@ func doWork(messages <-chan amqp.Delivery) {
 		updateData := map[string]interface{}{
 			"task_status": 1, //RECEIVED
 		}
-		err = utils.UpdateTaskStatus(baseUrl, updateData, taskId, token)
+		err = utils.UpdateTaskStatus(baseUrl, updateData, taskUUID, token)
 		utils.FailOnError(err, "Failed to update task status")
 
 		log.Printf("[x] Start task [x]")
@@ -48,7 +48,7 @@ func doWork(messages <-chan amqp.Delivery) {
 		updateData = map[string]interface{}{
 			"task_status": 2, //STARTED
 		}
-		err = utils.UpdateTaskStatus(baseUrl, updateData, taskId, token)
+		err = utils.UpdateTaskStatus(baseUrl, updateData, taskUUID, token)
 		utils.FailOnError(err, "Failed to update task status")
 
 		bT := time.Now()
@@ -71,7 +71,7 @@ func doWork(messages <-chan amqp.Delivery) {
 			"task_status": taskStatus,
 			"result":      result,
 		}
-		err = utils.UpdateTaskStatus(baseUrl, updateData, taskId, token)
+		err = utils.UpdateTaskStatus(baseUrl, updateData, taskUUID, token)
 		utils.FailOnError(err, "Failed to update task status")
 
 		err = d.Ack(false)
