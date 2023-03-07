@@ -52,20 +52,25 @@ func doWork(messages <-chan amqp.Delivery) {
 		utils.FailOnError(err, "Failed to update task status")
 
 		bT := time.Now()
+		// 任务状态
 		taskStatus := 3 //SUCCESS
 		resultDesc := "everything is ok"
+		// 任务执行结果状态，true为成功，false为失败
+		resultStatus := true
 		data, err := task.StartTask(d.Body)
 		if err != nil {
 			taskStatus = 4 //FAILURE
 			resultDesc = err.Error()
+			resultStatus = false
 		}
 		log.Printf("[x] Task is done [x]")
 		log.Printf("[x] Total use time: %f s [x]", time.Since(bT).Seconds())
 
 		// update task status to SUCCESS or FAILURE
 		result := map[string]interface{}{
-			"data": data,
-			"desc": resultDesc,
+			"status": resultStatus,
+			"data":   data,
+			"msg":    resultDesc,
 		}
 		updateData = map[string]interface{}{
 			"task_status": taskStatus,
