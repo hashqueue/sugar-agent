@@ -27,7 +27,7 @@ func UpdateTaskStatus(baseUrl string, reqData map[string]interface{}, taskUUID s
 	client := &HTTPClient{
 		BaseURL: baseUrl,
 	}
-	resp, err := client.Patch("/api/v1/tasks-results/"+taskUUID+"/", map[string]string{
+	resp, err := client.Patch("/api/v1/task-results/"+taskUUID+"/", map[string]string{
 		"Content-Type":  "application/json",
 		"Authorization": `Bearer ` + token,
 	}, reqData)
