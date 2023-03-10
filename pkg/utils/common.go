@@ -31,6 +31,6 @@ func ShowTips() {
 	log.Printf("[error] Parse parmas error, Please check your input params!")
 	fmt.Printf("Welcome to use, you can type ./sugar-agent -h to show help message." +
 		"\nUsages: ./sugar-agent -user guest -password guest -host localhost -port 5672 -exchange-name device_exchange " +
-		"-queue-name collect_device_perf_data_queue -routing-key device_perf_data\n")
+		"-device-id 6\n")
 	os.Exit(4)
 }

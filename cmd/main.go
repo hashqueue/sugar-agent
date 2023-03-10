@@ -14,6 +14,8 @@ import (
 	"sugar-agent/pkg/utils"
 )
 
+var deviceGlobalId string
+
 // doWork do the work
 // messages: message channel
 // return: none
@@ -24,63 +26,71 @@ func doWork(messages <-chan amqp.Delivery) {
 		msg := make(map[string]interface{})
 		err := json.Unmarshal(d.Body, &msg)
 		utils.FailOnError(err, "Failed to unmarshal message")
-		baseUrl := msg["metadata"].(map[string]interface{})["base_url"].(string)
-		taskUUID := msg["metadata"].(map[string]interface{})["task_uuid"].(string)
+		deviceId := msg["metadata"].(map[string]interface{})["device_id"].(string)
+		if deviceId != deviceGlobalId {
+			log.Printf("[x] Device id not match [x] -> deviceId from message: %s, my deviceId: %s", deviceId, deviceGlobalId)
+			err = d.Ack(false)
+			utils.FailOnError(err, "Failed to ack message")
+			log.Printf("Nothing to do, ack message and continue")
+		} else {
+			baseUrl := msg["metadata"].(map[string]interface{})["base_url"].(string)
+			taskUUID := msg["metadata"].(map[string]interface{})["task_uuid"].(string)
 
-		// Login to get token
-		loginData := map[string]interface{}{
-			"username": msg["metadata"].(map[string]interface{})["username"],
-			"password": msg["metadata"].(map[string]interface{})["password"],
+			// Login to get token
+			loginData := map[string]interface{}{
+				"username": msg["metadata"].(map[string]interface{})["username"],
+				"password": msg["metadata"].(map[string]interface{})["password"],
+			}
+			token, err := utils.UserLogin(baseUrl, loginData)
+			utils.FailOnError(err, "Failed to login")
+
+			// update task status to RECEIVED
+			updateData := map[string]interface{}{
+				"task_status": 1, //RECEIVED
+			}
+			err = utils.UpdateTaskStatus(baseUrl, updateData, taskUUID, token)
+			utils.FailOnError(err, "Failed to update task status")
+
+			log.Printf("[x] Start task [x]")
+
+			// update task status to STARTED
+			updateData = map[string]interface{}{
+				"task_status": 2, //STARTED
+			}
+			err = utils.UpdateTaskStatus(baseUrl, updateData, taskUUID, token)
+			utils.FailOnError(err, "Failed to update task status")
+
+			bT := time.Now()
+			// 任务状态
+			taskStatus := 3 //SUCCESS
+			resultDesc := "everything is ok"
+			// 任务执行结果状态，true为成功，false为失败
+			resultStatus := true
+			data, err := task.StartTask(d.Body)
+			if err != nil {
+				taskStatus = 4 //FAILURE
+				resultDesc = err.Error()
+				resultStatus = false
+			}
+			log.Printf("[x] Task is done [x]")
+			log.Printf("[x] Total use time: %f s [x]", time.Since(bT).Seconds())
+
+			// update task status to SUCCESS or FAILURE
+			result := map[string]interface{}{
+				"status": resultStatus,
+				"data":   data,
+				"msg":    resultDesc,
+			}
+			updateData = map[string]interface{}{
+				"task_status": taskStatus,
+				"result":      result,
+			}
+			err = utils.UpdateTaskStatus(baseUrl, updateData, taskUUID, token)
+			utils.FailOnError(err, "Failed to update task status")
+
+			err = d.Ack(false)
+			utils.FailOnError(err, "Failed to ack message")
 		}
-		token, err := utils.UserLogin(baseUrl, loginData)
-		utils.FailOnError(err, "Failed to login")
-
-		// update task status to RECEIVED
-		updateData := map[string]interface{}{
-			"task_status": 1, //RECEIVED
-		}
-		err = utils.UpdateTaskStatus(baseUrl, updateData, taskUUID, token)
-		utils.FailOnError(err, "Failed to update task status")
-
-		log.Printf("[x] Start task [x]")
-
-		// update task status to STARTED
-		updateData = map[string]interface{}{
-			"task_status": 2, //STARTED
-		}
-		err = utils.UpdateTaskStatus(baseUrl, updateData, taskUUID, token)
-		utils.FailOnError(err, "Failed to update task status")
-
-		bT := time.Now()
-		// 任务状态
-		taskStatus := 3 //SUCCESS
-		resultDesc := "everything is ok"
-		// 任务执行结果状态，true为成功，false为失败
-		resultStatus := true
-		data, err := task.StartTask(d.Body)
-		if err != nil {
-			taskStatus = 4 //FAILURE
-			resultDesc = err.Error()
-			resultStatus = false
-		}
-		log.Printf("[x] Task is done [x]")
-		log.Printf("[x] Total use time: %f s [x]", time.Since(bT).Seconds())
-
-		// update task status to SUCCESS or FAILURE
-		result := map[string]interface{}{
-			"status": resultStatus,
-			"data":   data,
-			"msg":    resultDesc,
-		}
-		updateData = map[string]interface{}{
-			"task_status": taskStatus,
-			"result":      result,
-		}
-		err = utils.UpdateTaskStatus(baseUrl, updateData, taskUUID, token)
-		utils.FailOnError(err, "Failed to update task status")
-
-		err = d.Ack(false)
-		utils.FailOnError(err, "Failed to ack message")
 	}
 }
 
@@ -90,10 +100,8 @@ func doWork(messages <-chan amqp.Delivery) {
 // host: MQ server host
 // port: MQ server port
 // exchangeName: MQ exchange name
-// queueName: MQ queue name
-// routingKey: MQ routing key
 // return: none
-func startConsuming(user string, password string, host string, port string, exchangeName string, queueName string, routingKey string) {
+func startConsuming(user string, password string, host string, port string, exchangeName string) {
 	conn, err := amqp.Dial(fmt.Sprintf("amqp://%s:%s@%s:%s/", user, password, host, port))
 	utils.FailOnError(err, "Failed to connect to RabbitMQ")
 	defer func(conn *amqp.Connection) {
@@ -110,7 +118,7 @@ func startConsuming(user string, password string, host string, port string, exch
 
 	err = ch.ExchangeDeclare(
 		exchangeName, // name
-		"direct",     // type
+		"fanout",     // type
 		true,         // durable
 		false,        // auto-deleted
 		false,        // internal
@@ -120,12 +128,12 @@ func startConsuming(user string, password string, host string, port string, exch
 	utils.FailOnError(err, "Failed to declare an exchange")
 
 	q, err := ch.QueueDeclare(
-		queueName, // name
-		true,      // durable
-		false,     // delete when unused
-		false,     // exclusive
-		false,     // no-wait
-		nil,       // arguments
+		fmt.Sprintf("collect_device_%s_perf_data_queue", deviceGlobalId), // name
+		false, // durable
+		false, // delete when unused
+		true,  // exclusive
+		false, // no-wait
+		nil,   // arguments
 	)
 	utils.FailOnError(err, "Failed to declare a queue")
 
@@ -135,10 +143,10 @@ func startConsuming(user string, password string, host string, port string, exch
 	err = ch.Qos(1, 0, false)
 	utils.FailOnError(err, "Failed to set QoS")
 
-	log.Printf("Binding queue %s to exchange %s with routing key %s", q.Name, exchangeName, routingKey)
+	log.Printf("Binding queue %s to exchange %s", q.Name, exchangeName)
 	err = ch.QueueBind(
 		q.Name,       // queue name
-		routingKey,   // routing key
+		"",           // routing key
 		exchangeName, // exchange
 		false,
 		nil)
@@ -170,11 +178,11 @@ func main() {
 	host := flag.String("host", "", "MQ server host")
 	port := flag.String("port", "", "MQ server port")
 	exchangeName := flag.String("exchange-name", "", "MQ exchange name")
-	queueName := flag.String("queue-name", "", "MQ queue name")
-	routingKey := flag.String("routing-key", "", "MQ routing key")
+	deviceId := flag.String("device-id", "", "deviceId")
 	flag.Parse()
-	if strings.TrimSpace(*user) != "" && strings.TrimSpace(*password) != "" && strings.TrimSpace(*host) != "" && strings.TrimSpace(*port) != "" && strings.TrimSpace(*exchangeName) != "" && strings.TrimSpace(*queueName) != "" && strings.TrimSpace(*routingKey) != "" {
-		startConsuming(*user, *password, *host, *port, *exchangeName, *queueName, *routingKey)
+	if strings.TrimSpace(*user) != "" && strings.TrimSpace(*password) != "" && strings.TrimSpace(*host) != "" && strings.TrimSpace(*port) != "" && strings.TrimSpace(*exchangeName) != "" && strings.TrimSpace(*deviceId) != "" {
+		deviceGlobalId = *deviceId
+		startConsuming(*user, *password, *host, *port, *exchangeName)
 	} else {
 		utils.ShowTips()
 	}
