@@ -11,17 +11,23 @@
 ## Usage
 
 ```shell
-hashqueue@hashqueue-pc:~/sugar-agent$ ./sugar-agent_amd64 -user guest -password guest -host localhost -port 5672 -exchange-name device_exchange -queue-name collect_device_perf_data_queue -routing-key device_perf_data
-2023/03/05 13:18:22 Binding queue collect_device_perf_data_queue to exchange device_exchange with routing key device_perf_data
-2023/03/05 13:18:22 [******] Started consumer [******] -> Waiting for messages. To exit press CTRL+C
-2023/03/05 13:18:41 [x] Received a message [x] -> {"task_type": 0, "metadata": {"base_url": "http://127.0.0.1:8000", "task_uuid": "d5cfcfa5-266e-4faa-8200-3e5ad9fc8a4e", "username": "admin", "password": "admin3306", "task_config": {"intervals": 10, "count": 5}}}
-2023/03/05 13:18:41 [x] Start task [x]
-2023/03/05 13:19:37 [x] Task is done [x]
-2023/03/05 13:19:37 [x] Total use time: 55.012806 s [x]
-2023/03/05 13:31:07 [x] Received a message [x] -> {"task_type": 0, "metadata": {"base_url": "http://127.0.0.1:8000", "task_uuid": "5b03bc30-bf42-4008-97e0-29387dbbc24c", "username": "admin", "password": "admin3306", "task_config": {"intervals": 5, "count": 5}}}
-2023/03/05 13:31:08 [x] Start task [x]
-2023/03/05 13:31:38 [x] Task is done [x]
-2023/03/05 13:31:38 [x] Total use time: 30.009797 s [x]
+hashqueue@hashqueue-pc:~/sugar-agent$ ./sugar-agent_amd64 -user guest -password guest -host 192.168.124.12 -port 5672 -exchange-name task_exchange -device-id 26
+2023/03/11 15:02:36 Binding queue collect_device_26_perf_data_queue to exchange task_exchange
+2023/03/11 15:02:36 [******] Started consumer [******] -> Waiting for messages. To exit press CTRL+C
+2023/03/11 15:04:58 [x] Received a message [x] -> {"task_type": 0, "metadata": {"base_url": "http://192.168.124.12:8000", "task_uuid": "b107992c-f519-477e-ad91-e36956413f9a", "username": "consumer", "password": "88888888", "device_id": "26", "task_config": {"intervals": 10, "count": 10}}}
+2023/03/11 15:04:58 [x] Start task [x]
+2023/03/11 15:06:48 [x] Task is done [x]
+2023/03/11 15:06:48 [x] Total use time: 110.026675 s [x]
+2023/03/11 15:06:48 [x] Received a message [x] -> {"task_type": 0, "metadata": {"base_url": "http://192.168.124.12:8000", "task_uuid": "750aba77-dcec-45d2-a4a4-b645d33a1391", "username": "consumer", "password": "88888888", "device_id": "24", "task_config": {"intervals": 9, "count": 9}}}
+2023/03/11 15:06:48 [x] Device id not match [x] -> deviceId from message: 24, my deviceId: 26
+2023/03/11 15:06:48 Nothing to do, ack message and continue
+2023/03/11 15:06:48 [x] Received a message [x] -> {"task_type": 0, "metadata": {"base_url": "http://192.168.124.12:8000", "task_uuid": "21bd57f2-d418-4206-8bc6-4f847dc8eee5", "username": "consumer", "password": "88888888", "device_id": "26", "task_config": {"intervals": 8, "count": 8}}}
+2023/03/11 15:06:48 [x] Start task [x]
+2023/03/11 15:08:00 [x] Task is done [x]
+2023/03/11 15:08:00 [x] Total use time: 72.020304 s [x]
+2023/03/11 15:08:00 [x] Received a message [x] -> {"task_type": 0, "metadata": {"base_url": "http://192.168.124.12:8000", "task_uuid": "aaef95dc-4583-4b2a-a7e4-7ac32ce434da", "username": "consumer", "password": "88888888", "device_id": "24", "task_config": {"intervals": 7, "count": 7}}}
+2023/03/11 15:08:00 [x] Device id not match [x] -> deviceId from message: 24, my deviceId: 26
+2023/03/11 15:08:00 Nothing to do, ack message and continue
 ```
 
 ## How to build this project
